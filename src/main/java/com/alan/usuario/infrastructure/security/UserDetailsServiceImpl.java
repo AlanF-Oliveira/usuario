@@ -1,8 +1,9 @@
 package com.alan.usuario.infrastructure.security;
 
 
-import com.alan.aprendendospring.infrastructure.entity.Usuario;
-import com.alan.aprendendospring.infrastructure.repository.UsuarioRepository;
+
+import com.alan.usuario.infrastructure.entity.Usuario;
+import com.alan.usuario.infrastructure.repository.UsuarioRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
