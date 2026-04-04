@@ -1,22 +1,25 @@
-# 👤 Usuário
+# 👤 Usuario
 
-API REST para gerenciamento de usuários, desenvolvida com **Java 17** e **Spring Boot 4**. O serviço é responsável pelo cadastro, autenticação e manutenção dos dados de usuários (incluindo endereços e telefones), com autenticação via **JWT** e senhas criptografadas com **BCrypt**. Este microsserviço é consumido pelo [agendador-tarefas](https://github.com/AlanF-Oliveira/agendador-tarefas) para validar identidades.
+API REST para gerenciamento de usuários, responsável pelo cadastro, autenticação e manutenção de dados pessoais (incluindo endereços e telefones). Emite os tokens **JWT** utilizados em toda a plataforma de agendamento de tarefas.
+
+> Este microsserviço faz parte de um ecossistema maior. O ponto de entrada recomendado para o frontend é o **[BFF Agendador de Tarefas](https://github.com/AlanF-Oliveira/bff-agendador-tarefas)**.
 
 ---
 
-## 🚀 Tecnologias Utilizadas
+## 🚀 Tecnologias
 
-| Tecnologia | Descrição |
-|---|---|
-| Java 17 | Linguagem principal |
-| Spring Boot 4.0.2 | Framework principal |
-| Spring Data JPA | Persistência de dados |
-| PostgreSQL | Banco de dados relacional |
-| Spring Security | Autenticação e autorização |
-| JWT (jjwt 0.13.0) | Geração e validação de tokens |
-| BCryptPasswordEncoder | Criptografia de senhas |
-| Lombok | Redução de boilerplate |
-| Gradle | Gerenciamento de build |
+| Tecnologia | Versão | Uso |
+|---|---|---|
+| Java | 17 | Linguagem principal |
+| Spring Boot | 4.0.2 | Framework base |
+| Spring Data JPA | — | Persistência de dados |
+| PostgreSQL | — | Banco de dados relacional |
+| Spring Security | — | Autenticação e autorização |
+| JWT (jjwt) | 0.13.0 | Geração e validação de tokens |
+| BCryptPasswordEncoder | — | Criptografia de senhas |
+| Lombok | — | Redução de boilerplate |
+| Gradle | — | Build |
+| Docker | — | Containerização |
 
 ---
 
@@ -24,57 +27,124 @@ API REST para gerenciamento de usuários, desenvolvida com **Java 17** e **Sprin
 
 ```
 src/main/java/com/alan/usuario/
-├── UsuarioApplication.java                # Classe principal
+├── UsuarioApplication.java
 ├── controller/
-│   └── UsuarioController.java             # Endpoints REST
+│   └── UsuarioController.java
 ├── business/
-│   ├── UsuarioService.java                # Regras de negócio
+│   ├── UsuarioService.java
 │   ├── dto/
-│   │   ├── UsuarioDTO.java                # DTO de usuário
-│   │   ├── EnderecoDTO.java               # DTO de endereço
-│   │   └── TelefoneDTO.java               # DTO de telefone
+│   │   ├── UsuarioDTO.java
+│   │   ├── EnderecoDTO.java
+│   │   └── TelefoneDTO.java
 │   └── converter/
-│       └── UsuarioConverter.java          # Conversão manual DTO <-> Entity
+│       └── UsuarioConverter.java
 └── infrastructure/
     ├── entity/
-    │   ├── Usuario.java                   # Entidade JPA de usuário
-    │   ├── Endereco.java                  # Entidade JPA de endereço
-    │   └── Telefone.java                  # Entidade JPA de telefone
+    │   ├── Usuario.java
+    │   ├── Endereco.java
+    │   └── Telefone.java
     ├── repository/
-    │   ├── UsuarioRepository.java         # Repositório JPA de usuário
-    │   ├── EnderecoRepository.java        # Repositório JPA de endereço
-    │   └── TelefoneRepository.java        # Repositório JPA de telefone
+    │   ├── UsuarioRepository.java
+    │   ├── EnderecoRepository.java
+    │   └── TelefoneRepository.java
     ├── exceptions/
-    │   ├── ResourceNotFoundException.java # Exceção para recurso não encontrado
-    │   └── ConflictException.java         # Exceção para conflitos (ex: email duplicado)
+    │   ├── ResourceNotFoundException.java
+    │   └── ConflictException.java
     └── security/
-        ├── JwtUtil.java                   # Geração e validação de tokens JWT
-        ├── JwtRequestFilter.java          # Filtro de autenticação JWT
-        ├── SecurityConfig.java            # Configuração do Spring Security
-        └── UserDetailsServiceImpl.java    # Carregamento de detalhes do usuário
+        ├── JwtUtil.java
+        ├── JwtRequestFilter.java
+        ├── SecurityConfig.java
+        └── UserDetailsServiceImpl.java
+```
+
+---
+
+## 🐳 Executando com Docker (recomendado)
+
+O `docker-compose.yml` sobe a aplicação junto com o PostgreSQL:
+
+```bash
+git clone https://github.com/AlanF-Oliveira/usuario.git
+cd usuario
+docker-compose up --build
+```
+
+### Serviços e portas
+
+| Serviço | Porta | Descrição |
+|---|---|---|
+| `app` | `8080` | API de usuários |
+| `db` | `5432` | PostgreSQL |
+
+### Variáveis de ambiente
+
+| Variável | Valor padrão |
+|---|---|
+| `SPRING_DATASOURCE_URL` | `jdbc:postgresql://db:5432/db_usuario` |
+| `SPRING_DATASOURCE_USERNAME` | `postgres` |
+| `SPRING_DATASOURCE_PASSWORD` | `2010` |
+
+### Derrubando os containers
+
+```bash
+docker-compose down
+```
+
+---
+
+## 🔧 Dockerfile
+
+Build multi-stage com Gradle:
+
+```dockerfile
+# Stage 1 — build
+FROM gradle:8.14-jdk17 AS build
+WORKDIR /app
+COPY . .
+RUN gradle build --no-daemon
+
+# Stage 2 — runtime
+FROM eclipse-temurin:17-jdk
+WORKDIR /app
+COPY --from=build /app/build/libs/*.jar /app/usuario.jar
+EXPOSE 8080
+CMD ["java", "-jar", "/app/usuario.jar"]
+```
+
+---
+
+## ▶️ Executando sem Docker
+
+### Pré-requisitos
+
+- Java 17+
+- PostgreSQL rodando localmente
+
+### Configuração
+
+Edite o `src/main/resources/application.properties`:
+
+```properties
+spring.datasource.url=jdbc:postgresql://localhost:5432/db_usuario
+spring.datasource.username=postgres
+spring.datasource.password=2010
+spring.jpa.hibernate.ddl-auto=update
+```
+
+### Executando
+
+```bash
+./gradlew bootRun
 ```
 
 ---
 
 ## 🔐 Autenticação
 
-A API utiliza autenticação **stateless** baseada em **JWT**. O token é gerado no login e deve ser enviado no header das requisições protegidas:
-
-```
-Authorization: Bearer <seu_token_jwt>
-```
-
-- As senhas são armazenadas criptografadas com **BCrypt**.
-- O token tem validade de **1 hora**.
-- O `JwtRequestFilter` intercepta e valida o token em cada requisição.
-
-### Rotas públicas (sem autenticação)
-
-| Método | Endpoint | Descrição |
-|---|---|---|
-| `POST` | `/usuario` | Cadastro de novo usuário |
-| `POST` | `/usuario/login` | Login e geração do token JWT |
-| `GET` | `/auth` | Verificação de autenticação |
+- Senhas armazenadas com **BCrypt**
+- Token **JWT** com validade de **1 hora**
+- Rotas públicas: `POST /usuario` e `POST /usuario/login`
+- Todas as demais rotas exigem o header: `Authorization: Bearer <token>`
 
 ---
 
@@ -82,21 +152,20 @@ Authorization: Bearer <seu_token_jwt>
 
 Base URL: `/usuario`
 
-| Método | Endpoint | Descrição | Auth |
+| Método | Endpoint | Auth | Descrição |
 |---|---|---|---|
-| `POST` | `/usuario` | Cadastra um novo usuário | ❌ |
-| `POST` | `/usuario/login` | Realiza login e retorna token JWT | ❌ |
-| `GET` | `/usuario` | Busca dados do usuário por e-mail | ✅ |
-| `PUT` | `/usuario` | Atualiza dados do usuário autenticado | ✅ |
-| `DELETE` | `/usuario/{email}` | Remove um usuário pelo e-mail | ✅ |
-| `PUT` | `/usuario/endereco` | Atualiza um endereço por ID | ✅ |
-| `POST` | `/usuario/endereco` | Cadastra novo endereço para o usuário | ✅ |
-| `PUT` | `/usuario/telefone` | Atualiza um telefone por ID | ✅ |
-| `POST` | `/usuario/telefone` | Cadastra novo telefone para o usuário | ✅ |
+| `POST` | `/usuario` | ❌ | Cadastro de novo usuário |
+| `POST` | `/usuario/login` | ❌ | Login — retorna token JWT |
+| `GET` | `/usuario?email={email}` | ✅ | Busca dados do usuário |
+| `PUT` | `/usuario` | ✅ | Atualiza dados do usuário |
+| `DELETE` | `/usuario/{email}` | ✅ | Remove o usuário |
+| `POST` | `/usuario/endereco` | ✅ | Cadastra endereço |
+| `PUT` | `/usuario/endereco?id={id}` | ✅ | Atualiza endereço |
+| `POST` | `/usuario/telefone` | ✅ | Cadastra telefone |
+| `PUT` | `/usuario/telefone?id={id}` | ✅ | Atualiza telefone |
 
-### Detalhamento dos Endpoints
+### Exemplo — Cadastro
 
-#### `POST /usuario` — Cadastro
 ```json
 {
   "nome": "Alan Oliveira",
@@ -106,122 +175,50 @@ Base URL: `/usuario`
     {
       "rua": "Rua das Flores",
       "numero": 123,
-      "complemento": "Apto 4",
-      "cidade": "São Paulo",
-      "estado": "SP",
-      "cep": "01310-100"
+      "cidade": "Fortaleza",
+      "estado": "CE",
+      "cep": "60000-000"
     }
   ],
   "telefones": [
-    {
-      "ddd": "11",
-      "numero": "987654321"
-    }
+    { "ddd": "85", "numero": "987654321" }
   ]
 }
 ```
 
-#### `POST /usuario/login` — Login
-**Body:**
+### Exemplo — Login
+
 ```json
-{
-  "email": "alan@email.com",
-  "senha": "minhasenha"
-}
+// Request
+{ "email": "alan@email.com", "senha": "minhasenha" }
+
+// Response
+"Bearer eyJhbGciOiJIUzI1NiJ9..."
 ```
-**Resposta:**
-```
-Bearer eyJhbGciOiJIUzI1NiJ9...
-```
-
-#### `GET /usuario?email={email}` — Busca usuário
-**Header:** `Authorization: Bearer <token>`
-
-#### `PUT /usuario` — Atualiza dados
-Atualiza nome, e-mail e/ou senha do usuário autenticado. Campos `null` são ignorados.
-
-**Header:** `Authorization: Bearer <token>`
-
-#### `PUT /usuario/endereco?id={id}` — Atualiza endereço
-Campos `null` são ignorados (atualização parcial).
-
-#### `PUT /usuario/telefone?id={id}` — Atualiza telefone
-Campos `null` são ignorados (atualização parcial).
 
 ---
 
-## 📦 Modelo de Dados
+## 🧩 Microsserviços Relacionados
 
-### Usuario (tabela: `usuario`)
-
-| Campo | Tipo | Descrição |
+| Serviço | Repositório | Papel |
 |---|---|---|
-| `id` | Long | Identificador único (auto-gerado) |
-| `nome` | String (100) | Nome do usuário |
-| `email` | String (100) | E-mail (usado como username) |
-| `senha` | String (255) | Senha criptografada com BCrypt |
-| `enderecos` | List\<Endereco\> | Lista de endereços (OneToMany) |
-| `telefones` | List\<Telefone\> | Lista de telefones (OneToMany) |
-
-### Endereco (tabela: `endereco`)
-
-| Campo | Tipo | Descrição |
-|---|---|---|
-| `id` | Long | Identificador único |
-| `rua` | String | Nome da rua |
-| `numero` | Long | Número |
-| `complemento` | String (50) | Complemento |
-| `cidade` | String (150) | Cidade |
-| `estado` | String (2) | UF |
-| `cep` | String (9) | CEP |
-
-### Telefone (tabela: `telefone`)
-
-| Campo | Tipo | Descrição |
-|---|---|---|
-| `id` | Long | Identificador único |
-| `ddd` | String (3) | DDD |
-| `numero` | String (10) | Número |
+| **BFF** | [bff-agendador-tarefas](https://github.com/AlanF-Oliveira/bff-agendador-tarefas) | Ponto de entrada — orquestra todas as chamadas |
+| **agendador-tarefas** | [agendador-tarefas](https://github.com/AlanF-Oliveira/agendador-tarefas) | Consome este serviço para validar tokens JWT |
+| **notificacao** | [notificacao](https://github.com/AlanF-Oliveira/notificacao) | Envia notificações sobre tarefas agendadas |
 
 ---
 
-## ⚙️ Como Executar
+## 📖 Documentação da API (Swagger)
 
-### Pré-requisitos
+Com a aplicação rodando, acesse:
 
-- Java 17+
-- PostgreSQL rodando localmente ou em um container
-
-### Configuração
-
-Crie/edite o arquivo `src/main/resources/application.properties`:
-
-```properties
-spring.datasource.url=jdbc:postgresql://localhost:5432/usuario
-spring.datasource.username=seu_usuario
-spring.datasource.password=sua_senha
-spring.jpa.hibernate.ddl-auto=update
-spring.jpa.show-sql=true
+```
+http://localhost:8080/swagger-ui.html
 ```
 
-### Rodando com Gradle
+---
 
-```bash
-# Clonar o repositório
-git clone https://github.com/AlanF-Oliveira/usuario.git
-cd usuario
-
-# Executar
-./gradlew bootRun
-```
-
-### Build
-
-```bash
-./gradlew build
-```
-
-### Testes
+## 🧪 Testes
 
 ```bash
 ./gradlew test
@@ -229,12 +226,6 @@ cd usuario
 
 ---
 
-## 🔗 Integração com outros microsserviços
-
-Este serviço expõe o endpoint `GET /usuario?email={email}` consumido pelo microsserviço [agendador-tarefas](https://github.com/AlanF-Oliveira/agendador-tarefas) via **OpenFeign** para validar usuários autenticados por token JWT.
-
----
-
 ## 👤 Autor
 
-Desenvolvido por **[AlanF-Oliveira](https://github.com/AlanF-Oliveira)**
+**Alan F. Oliveira** — [github.com/AlanF-Oliveira](https://github.com/AlanF-Oliveira)
