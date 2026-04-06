@@ -18,7 +18,6 @@ import lombok.AllArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -51,7 +50,7 @@ public class UsuarioService {
                            usuarioDTO.getSenha())
            );
         return "Bearer " + jwtUtil.generateToken(authentication.getName());
-       }catch (BadCredentialsException | UsernameNotFoundException | AuthorizationDeniedException e){
+       }catch (BadCredentialsException | UsernameNotFoundException  e){
             throw new UnauthorizedException("Usuário ou senha inválidos ", e.getCause());
        }
     }
