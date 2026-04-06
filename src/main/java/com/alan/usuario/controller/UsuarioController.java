@@ -48,12 +48,8 @@ public class UsuarioController {
             @ApiResponse(responseCode = "403", description = "Usuário ou senha inválidos")
     })
     @PostMapping("/login")
-    public String login(@RequestBody UsuarioDTO usuarioDTO) {
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken((usuarioDTO.getEmail()),
-                        usuarioDTO.getSenha())
-        );
-        return "Bearer " + jwtUtil.generateToken(authentication.getName());
+    public ResponseEntity<String> login(@RequestBody UsuarioDTO usuarioDTO) {
+        return ResponseEntity.ok(usuarioService.autenticarUsuario(usuarioDTO));
     }
 
     @Operation(summary = "Buscar usuário", description = "Busca usuário pelo email")

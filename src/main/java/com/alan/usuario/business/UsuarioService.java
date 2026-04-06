@@ -9,11 +9,18 @@ import com.alan.usuario.infrastructure.entity.Telefone;
 import com.alan.usuario.infrastructure.entity.Usuario;
 import com.alan.usuario.infrastructure.exceptions.ConflictException;
 import com.alan.usuario.infrastructure.exceptions.ResourceNotFoundException;
+import com.alan.usuario.infrastructure.exceptions.UnauthorizedException;
 import com.alan.usuario.infrastructure.repository.EnderecoRepository;
 import com.alan.usuario.infrastructure.repository.TelefoneRepository;
 import com.alan.usuario.infrastructure.repository.UsuarioRepository;
 import com.alan.usuario.infrastructure.security.JwtUtil;
 import lombok.AllArgsConstructor;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.authorization.AuthorizationDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -27,6 +34,7 @@ public class UsuarioService {
     private final JwtUtil jwtUtil;
     private final EnderecoRepository enderecoRepository;
     private final TelefoneRepository telefoneRepository;
+    private final AuthenticationManager authenticationManager;
 
     public UsuarioDTO salvaUsuario(UsuarioDTO usuarioDTO) {
         emailExiste(usuarioDTO.getEmail());
@@ -34,6 +42,18 @@ public class UsuarioService {
         Usuario usuario = usuarioConverter.paraUsuario(usuarioDTO);
         return usuarioConverter.paraUsuarioDTO(
                 usuarioRepository.save(usuario));
+    }
+
+    public String autenticarUsuario(UsuarioDTO usuarioDTO) {
+       try {
+           Authentication authentication = authenticationManager.authenticate(
+                   new UsernamePasswordAuthenticationToken((usuarioDTO.getEmail()),
+                           usuarioDTO.getSenha())
+           );
+        return "Bearer " + jwtUtil.generateToken(authentication.getName());
+       }catch (BadCredentialsException | UsernameNotFoundException | AuthorizationDeniedException e){
+            throw new UnauthorizedException("Usuário ou senha inválidos ", e.getCause());
+       }
     }
 
     public void emailExiste(String email) {
@@ -56,7 +76,7 @@ public class UsuarioService {
             return usuarioConverter.paraUsuarioDTO(
                     usuarioRepository.findByEmail(email).
                             orElseThrow(
-                    () -> new ResourceNotFoundException("Email não encontrado " + email)
+                                    () -> new ResourceNotFoundException("Email não encontrado " + email)
                             )
             );
         } catch (ResourceNotFoundException e) {
@@ -100,7 +120,7 @@ public class UsuarioService {
         return usuarioConverter.paraTelefoneDTO(telefoneRepository.save(telefone));
     }
 
-    public EnderecoDTO cadastraEndereco(String token, EnderecoDTO enderecoDTO){
+    public EnderecoDTO cadastraEndereco(String token, EnderecoDTO enderecoDTO) {
         String email = jwtUtil.extrairEmailToken(token.substring(7));
         Usuario usuario = usuarioRepository.findByEmail(email).orElseThrow(() ->
                 new ResourceNotFoundException("Email não encontrado " + email));
@@ -109,7 +129,7 @@ public class UsuarioService {
         return usuarioConverter.paraEnderecoDTO(enderecoEntity);
     }
 
-    public TelefoneDTO cadastrarTelefone(String token, TelefoneDTO telefoneDTO){
+    public TelefoneDTO cadastrarTelefone(String token, TelefoneDTO telefoneDTO) {
         String email = jwtUtil.extrairEmailToken(token.substring(7));
         Usuario usuario = usuarioRepository.findByEmail(email).orElseThrow(() ->
                 new ResourceNotFoundException("Email não encontrado " + email));
@@ -117,5 +137,7 @@ public class UsuarioService {
         Telefone telefoneEntity = telefoneRepository.save(telefone);
         return usuarioConverter.paraTelefoneDTO(telefoneEntity);
     }
+
+
 }
 
