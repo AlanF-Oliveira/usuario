@@ -122,6 +122,7 @@ public class UsuarioConverter {
                 .cep(enderecoDTO.getCep() != null ? enderecoDTO.getCep() : entity.getCep())
                 .complemento(enderecoDTO.getComplemento() != null ? enderecoDTO.getComplemento() : entity.getComplemento())
                 .estado(enderecoDTO.getEstado() != null ? enderecoDTO.getEstado() : entity.getEstado())
+                .usuario_id(entity.getUsuario_id())
                 .build();
     }
 
@@ -130,6 +131,7 @@ public class UsuarioConverter {
                 .id(entity.getId())
                 .ddd(telefoneDTO.getDdd() != null ? telefoneDTO.getDdd() : entity.getDdd())
                 .numero(telefoneDTO.getNumero() != null ? telefoneDTO.getNumero() : entity.getNumero())
+                .usuario_id(entity.getUsuario_id())
                 .build();
     }
 
